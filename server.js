@@ -1,58 +1,47 @@
 import express from "express";
-import cors from "cors";
 import dotenv from "dotenv";
 import OpenAI from "openai";
+import path from "path";
 
 dotenv.config();
 
 const app = express();
-app.use(cors());
 app.use(express.json());
-
-// MEMORIA POR USUARIO (simulado)
-const sessions = {};
+app.use(express.static("public"));
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
+// 🔥 RUTA PRINCIPAL (ARREGLA "Cannot GET /")
+app.get("/", (req, res) => {
+  res.sendFile(path.resolve("public/index.html"));
+});
+
+// 🤖 CHAT
 app.post("/chat", async (req, res) => {
   try {
-    const { message, sessionId } = req.body;
+    const userMessage = req.body.message;
 
-    if (!sessions[sessionId]) {
-      sessions[sessionId] = [];
-    }
-
-    const memory = sessions[sessionId];
-
-    memory.push({ role: "user", content: message });
-
-    if (memory.length > 15) memory.shift();
-
-    const response = await client.chat.completions.create({
+    const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
-        {
-          role: "system",
-          content:
-            "Eres Intel AI Assistant de nivel empresarial. Recomiendas procesadores Intel según uso (gaming, trabajo, edición). Eres claro, directo, profesional, haces preguntas para guiar al usuario y mantienes conversación natural."
-        },
-        ...memory
+        { role: "user", content: userMessage }
       ]
     });
 
-    const reply = response.choices[0].message.content;
+    res.json({
+      reply: completion.choices[0].message.content
+    });
 
-    memory.push({ role: "assistant", content: reply });
-
-    res.json({ reply });
-
-  } catch (err) {
-    res.json({ reply: "Error interno del sistema." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error en el servidor" });
   }
 });
 
-app.listen(3000, () => {
-  console.log("Intel AI Enterprise activo en http://localhost:3000");
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log("Chatbot activo en puerto " + PORT);
 });
