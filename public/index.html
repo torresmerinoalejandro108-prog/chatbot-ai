@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Intel Chatbot</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0a0f1c;
+      color: #e6e6e6;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      background: #111a2e;
+      padding: 15px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      border-bottom: 1px solid #1f2a44;
+    }
+
+    #chat {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+    }
+
+    .msg {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 8px;
+      max-width: 70%;
+    }
+
+    .user {
+      background: #1f6feb;
+      align-self: flex-end;
+      margin-left: auto;
+    }
+
+    .ai {
+      background: #222b3d;
+      margin-right: auto;
+    }
+
+    footer {
+      display: flex;
+      padding: 10px;
+      background: #111a2e;
+      border-top: 1px solid #1f2a44;
+    }
+
+    input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      outline: none;
+    }
+
+    button {
+      margin-left: 10px;
+      padding: 10px 15px;
+      background: #1f6feb;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #388bfd;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  Intel Chatbot System
+</header>
+
+<div id="chat"></div>
+
+<footer>
+  <input id="msg" placeholder="Escribe tu mensaje..." />
+  <button onclick="send()">Enviar</button>
+</footer>
+
+<script>
+async function send() {
+  const input = document.getElementById("msg");
+  const msg = input.value;
+  if (!msg) return;
+
+  const chat = document.getElementById("chat");
+
+  chat.innerHTML += `<div class="msg user">Tú: ${msg}</div>`;
+  input.value = "";
+
+  const res = await fetch("/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message: msg })
+  });
+
+  const data = await res.json();
+
+  chat.innerHTML += `<div class="msg ai">IA: ${data.reply}</div>`;
+  chat.scrollTop = chat.scrollHeight;
+}
+</script>
+
+</body>
+</html>
