@@ -103,9 +103,44 @@ i7 → $9500 | alto rendimiento
 }
 
 
+// 👋 SALUDO Y DESPEDIDA (AGREGADO SIN BORRAR NADA)
+function greetingAndFarewell(text) {
+  if (text.includes("hola")) {
+    return `
+👋 Hola, soy tu asistente Intel.
+
+Puedo ayudarte con:
+✔ gaming
+✔ escuela
+✔ programación
+✔ precios
+✔ comparar procesadores
+
+💬 ¿Qué necesitas hoy?
+`;
+  }
+
+  if (text.includes("adios") || text.includes("bye") || text.includes("hasta")) {
+    return `
+👋 Perfecto, fue un gusto ayudarte.
+
+💻 Cuando quieras elegir procesadores Intel, aquí estaré.
+
+🤖 ¿Necesitas algo más antes de irte?
+`;
+  }
+
+  return null;
+}
+
+
 // 🧠 MOTOR PRINCIPAL
 function bot(msg) {
   const text = msg.toLowerCase();
+
+  // 👋 saludo / despedida primero
+  const greet = greetingAndFarewell(text);
+  if (greet) return greet;
 
   // 💸 detectar dinero
   const money = extractBudget(text);
@@ -219,4 +254,4 @@ const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log("🔥 Intel Store Pro activo en puerto", PORT);
-});
+});});
