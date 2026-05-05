@@ -1,74 +1,222 @@
 import express from "express";
-import dotenv from "dotenv";
-import OpenAI from "openai";
 import path from "path";
-
-dotenv.config();
 
 const app = express();
 app.use(express.json());
 
 const __dirname = path.resolve();
 
-// Frontend
 app.use(express.static(path.join(__dirname, "public")));
 
-// OpenAI
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
-
-// Debug útil
-console.log("🔑 API KEY:", process.env.OPENAI_API_KEY ? "CARGADA ✔" : "FALTA ❌");
-
-// Home
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// CHAT
-app.post("/chat", async (req, res) => {
-  const userMessage = req.body.message;
 
-  if (!userMessage) {
-    return res.json({ reply: "No me mandaste nada 😅" });
+// 🧠 MEMORIA SIMPLE (por usuario sesión)
+let session = {
+  intent: null,
+  budget: null
+};
+
+
+// 🧠 BASE INTEL
+const intel = {
+  i3: { price: 3000, quality: 6 },
+  i5: { price: 5500, quality: 8 },
+  i7: { price: 9500, quality: 9 }
+};
+
+
+// 💰 PARSEO DE PRESUPUESTO
+function extractBudget(text) {
+  const match = text.match(/\d+/);
+  return match ? parseInt(match[0]) : null;
+}
+
+
+// 🧠 RECOMENDADOR INTELIGENTE
+function recommend() {
+  const budget = session.budget;
+
+  if (!budget) {
+    return `
+💸 No me dijiste presupuesto.
+
+Dime algo como:
+👉 "tengo 5000"
+👉 "6000 pesos"
+
+y te recomiendo el mejor procesador.
+`;
   }
 
-  if (!process.env.OPENAI_API_KEY) {
-    return res.json({ reply: "❌ Falta la API key en Render" });
+  if (budget < 4000) {
+    return `
+💡 Con $${budget} MXN:
+
+👉 Intel i3 es tu mejor opción
+✔ barato
+✔ suficiente para tareas básicas
+
+💬 ¿Quieres algo mejor o te explico diferencias?
+`;
   }
 
-  try {
-    const completion = await client.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        { role: "user", content: userMessage }
-      ]
-    });
+  if (budget < 7000) {
+    return `
+💡 Con $${budget} MXN:
 
-    const reply = completion?.choices?.[0]?.message?.content;
+👉 Intel i5 es perfecto para ti
+✔ gaming
+✔ multitarea
+✔ mejor inversión
 
-    return res.json({
-      reply: reply || "No hubo respuesta de la IA 🤖"
-    });
-
-  } catch (error) {
-    console.error("💀 ERROR OPENAI:", error?.message || error);
-
-    return res.json({
-      reply: "Error con la IA 😵 revisa logs en Render"
-    });
+💬 ¿Quieres comparar con i7?
+`;
   }
+
+  return `
+💡 Con $${budget} MXN:
+
+👉 Intel i7 recomendado
+✔ máximo rendimiento
+✔ gaming extremo
+✔ edición profesional
+
+💬 ¿Quieres ver diferencias con i5?
+`;
+}
+
+
+// ⚔️ COMPARADOR
+function compare() {
+  return `
+⚔️ COMPARACIÓN INTEL:
+
+i3 → $3000 | básico  
+i5 → $5500 | equilibrado  
+i7 → $9500 | alto rendimiento  
+
+💬 Dime tu presupuesto o uso (gaming, escuela, programación)
+`;
+}
+
+
+// 🧠 MOTOR PRINCIPAL
+function bot(msg) {
+  const text = msg.toLowerCase();
+
+  // 💸 detectar dinero
+  const money = extractBudget(text);
+  if (money) {
+    session.budget = money;
+    return recommend();
+  }
+
+  // 🎮 gaming
+  if (text.includes("gaming") || text.includes("juego")) {
+    session.intent = "gaming";
+    return `
+🎮 Gaming detectado
+
+👉 Recomendado: i5 o i7
+
+💬 Dime tu presupuesto (ej: tengo 5000)
+`;
+  }
+
+  // 📚 escuela
+  if (text.includes("escuela") || text.includes("estudio")) {
+    session.intent = "estudio";
+    return `
+📚 Para estudio:
+
+👉 i3 o i5 recomendado
+
+💬 ¿Cuánto quieres gastar?
+`;
+  }
+
+  // 💻 programación
+  if (text.includes("programar")) {
+    session.intent = "programacion";
+    return `
+💻 Programación:
+
+👉 i5 recomendado
+👉 i7 si es pesado
+
+💬 ¿Cuál es tu presupuesto?
+`;
+  }
+
+  // ⚔️ comparar
+  if (text.includes("comparar") || text.includes("diferencia")) {
+    return compare();
+  }
+
+  // 👍 sí
+  if (text === "si" || text === "sí") {
+    return `
+🔥 Perfecto.
+
+Dime:
+👉 gaming / escuela / programación
+
+o dime tu presupuesto directo.
+`;
+  }
+
+  // 👎 no
+  if (text === "no") {
+    return `
+👌 Ok.
+
+Puedes decir:
+- comparar
+- precios
+- gaming
+- presupuesto
+
+💬 ¿Qué quieres ahora?
+`;
+  }
+
+  // 🔁 fallback
+  return `
+🤖 No entendí eso bien.
+
+Pero puedo ayudarte con:
+
+✔ gaming
+✔ escuela
+✔ programación
+✔ comparar procesadores
+✔ presupuesto
+
+💬 ¿Qué necesitas?
+`;
+}
+
+
+// 🚀 CHAT
+app.post("/chat", (req, res) => {
+  const msg = req.body.message || "";
+  console.log("USER:", msg);
+
+  const reply = bot(msg);
+
+  res.json({
+    reply,
+    buttons: ["gaming", "escuela", "programación", "comparar", "presupuesto"]
+  });
 });
 
-// 404
-app.use((req, res) => {
-  res.status(404).send("Not Found");
-});
 
-// PORT
+// 🚀 SERVER
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log("🚀 Chatbot activo en puerto", PORT);
+  console.log("🔥 Intel Store Pro activo en puerto", PORT);
 });
