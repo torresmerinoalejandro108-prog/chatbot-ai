@@ -1,10 +1,13 @@
-const express = require("express");
-const path = require("path");
+import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
 app.use(express.json());
 
-const __dirname = __dirname || path.resolve();
+// 🧠 FIX IMPORTANTE PARA RENDER (ESM)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // 🌐 FRONTEND
 app.use(express.static(path.join(__dirname, "public")));
@@ -56,10 +59,9 @@ Ejemplo:
 💡 Con $${budget} MXN:
 
 👉 Intel i3 recomendado
-✔ económico
 ✔ básico para escuela/oficina
 
-🤖 ¿Quieres subir de nivel o comparar opciones?
+🤖 ¿Quieres subir de nivel?
 `;
   }
 
@@ -70,9 +72,8 @@ Ejemplo:
 👉 Intel i5 recomendado
 ✔ gaming
 ✔ multitarea
-✔ mejor inversión
 
-🤖 ¿Quieres compararlo con i7?
+🤖 ¿Quieres comparar con i7?
 `;
   }
 
@@ -81,10 +82,8 @@ Ejemplo:
 
 👉 Intel i7 recomendado
 ✔ máximo rendimiento
-✔ gaming extremo
-✔ edición profesional
 
-🤖 ¿Quieres ver diferencias con i5?
+🤖 ¿Quieres ver diferencias?
 `;
 }
 
@@ -94,39 +93,38 @@ function compare() {
   return `
 ⚔️ COMPARACIÓN INTEL
 
-i3 → $3000 | básico  
-i5 → $5500 | equilibrado  
-i7 → $9500 | alto rendimiento  
+i3 → $3000  
+i5 → $5500  
+i7 → $9500  
 
-🤖 Dime tu presupuesto o uso (gaming, estudio, programación)
+🤖 Dime tu presupuesto o uso.
 `;
 }
 
 
-// 👋 SALUDO + CIERRE INTELIGENTE
+// 👋 SALUDO + CIERRE
 function greetingOrFarewell(text) {
 
   if (text.includes("hola")) {
     return `
 👋 Hola, soy tu asistente Intel.
 
-Te ayudo a elegir el mejor procesador según:
 ✔ gaming
 ✔ estudio
 ✔ programación
 ✔ presupuesto
 
-🤖 ¿Qué necesitas hoy?
+🤖 ¿Qué necesitas?
 `;
   }
 
   if (text.includes("adios") || text.includes("bye") || text.includes("hasta")) {
     return `
-👋 Perfecto, fue un gusto ayudarte.
+👋 Fue un gusto ayudarte.
 
-💻 Cuando quieras elegir un Intel, aquí estaré.
+💻 Aquí sigo cuando necesites Intel.
 
-🤖 ¿Necesitas algo más?
+🤖 ¿Algo más?
 `;
   }
 
@@ -138,36 +136,32 @@ Te ayudo a elegir el mejor procesador según:
 function bot(msg) {
   const text = msg.toLowerCase();
 
-  // 👋 saludo / despedida
   const greet = greetingOrFarewell(text);
   if (greet) return greet;
 
-  // 💸 presupuesto
   const money = extractBudget(text);
   if (money) {
     session.budget = money;
     return `
-💰 Presupuesto detectado: $${money}
+💰 Presupuesto: $${money}
 
 ${recommend()}
 
-🤖 ¿Quieres comparar o elegir otra opción?
+🤖 ¿Quieres comparar?
 `;
   }
 
-  // 🎮 gaming
   if (text.includes("gaming") || text.includes("juego")) {
     session.intent = "gaming";
     return `
 🎮 Gaming detectado
 
-👉 Recomendado: i5 o i7
+👉 i5 o i7 recomendado
 
-🤖 Dime tu presupuesto (ej: tengo 5000)
+🤖 Dime tu presupuesto
 `;
   }
 
-  // 📚 escuela
   if (text.includes("escuela") || text.includes("estudio")) {
     session.intent = "estudio";
     return `
@@ -175,65 +169,32 @@ ${recommend()}
 
 👉 i3 o i5 recomendado
 
-🤖 ¿Cuánto quieres gastar?
+🤖 ¿Cuánto tienes?
 `;
   }
 
-  // 💻 programación
   if (text.includes("programar")) {
     session.intent = "programacion";
     return `
 💻 Programación detectada
 
 👉 i5 recomendado
-👉 i7 si es pesado
 
-🤖 ¿Cuál es tu presupuesto?
+🤖 ¿Presupuesto?
 `;
   }
 
-  // ⚔️ comparar
   if (text.includes("comparar") || text.includes("diferencia")) {
     return compare();
   }
 
-  // 👍 sí
-  if (text === "si" || text === "sí") {
-    return `
-🔥 Perfecto.
-
-Dime:
-👉 gaming / estudio / programación
-
-🤖 o tu presupuesto directo.
-`;
-  }
-
-  // 👎 no
-  if (text === "no") {
-    return `
-👌 Entendido.
-
-Puedes preguntarme:
-✔ precios
-✔ comparar
-✔ gaming
-✔ presupuesto
-
-🤖 ¿Qué quieres ahora?
-`;
-  }
-
-  // 🔁 fallback
   return `
-🤖 No entendí eso bien.
+🤖 No entendí eso.
 
-Pero puedo ayudarte con:
 ✔ gaming
 ✔ estudio
 ✔ programación
-✔ comparar
-✔ precios
+✔ presupuesto
 
 🤖 ¿Qué necesitas?
 `;
