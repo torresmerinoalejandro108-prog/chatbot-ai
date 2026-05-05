@@ -18,43 +18,45 @@ const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-// 🔍 DEBUG CLAVE
-console.log("OPENAI KEY:", process.env.OPENAI_API_KEY ? "CARGADA ✔" : "NO CARGADA ❌");
+// Debug útil
+console.log("🔑 API KEY:", process.env.OPENAI_API_KEY ? "CARGADA ✔" : "FALTA ❌");
 
-// HOME
+// Home
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 // CHAT
 app.post("/chat", async (req, res) => {
+  const userMessage = req.body.message;
+
+  if (!userMessage) {
+    return res.json({ reply: "No me mandaste nada 😅" });
+  }
+
+  if (!process.env.OPENAI_API_KEY) {
+    return res.json({ reply: "❌ Falta la API key en Render" });
+  }
+
   try {
-    const userMessage = req.body.message;
-
-    console.log("MENSAJE RECIBIDO:", userMessage);
-
-    if (!process.env.OPENAI_API_KEY) {
-      return res.json({ reply: "Falta API key en Render 😵" });
-    }
-
     const completion = await client.chat.completions.create({
       model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: userMessage }]
+      messages: [
+        { role: "user", content: userMessage }
+      ]
     });
 
     const reply = completion?.choices?.[0]?.message?.content;
 
-    console.log("RESPUESTA IA:", reply);
-
     return res.json({
-      reply: reply || "La IA no respondió 🤖"
+      reply: reply || "No hubo respuesta de la IA 🤖"
     });
 
   } catch (error) {
-    console.error("ERROR OPENAI:", error?.message || error);
+    console.error("💀 ERROR OPENAI:", error?.message || error);
 
     return res.json({
-      reply: "Error en la IA o conexión 😵"
+      reply: "Error con la IA 😵 revisa logs en Render"
     });
   }
 });
@@ -64,8 +66,9 @@ app.use((req, res) => {
   res.status(404).send("Not Found");
 });
 
+// PORT
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log("Chatbot activo en puerto", PORT);
+  console.log("🚀 Chatbot activo en puerto", PORT);
 });
