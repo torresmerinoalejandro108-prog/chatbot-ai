@@ -1,0 +1,15 @@
+{
+  "name": "Intel AI Assistant",
+  "short_name": "IntelAI",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0b1220",
+  "theme_color": "#0071c5",
+  "icons": [
+    {
+      "src": "https://upload.wikimedia.org/wikipedia/commons/6/64/Intel-logo-2022.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
