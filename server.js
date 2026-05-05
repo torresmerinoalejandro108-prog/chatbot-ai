@@ -1,224 +1,113 @@
-import express from "express";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const app = express();
-app.use(express.json());
-
-// 🧠 FIX IMPORTANTE PARA RENDER (ESM)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// 🌐 FRONTEND
-app.use(express.static(path.join(__dirname, "public")));
-
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
-
-// 🧠 MEMORIA SIMPLE
-let session = {
-  intent: null,
-  budget: null
-};
-
-
-// 🧠 BASE DE DATOS INTEL
-const intel = {
-  i3: { price: 3000, use: "básico", quality: 6 },
-  i5: { price: 5500, use: "equilibrado", quality: 8 },
-  i7: { price: 9500, use: "alto rendimiento", quality: 9 }
-};
-
-
-// 💰 EXTRAER PRESUPUESTO
-function extractBudget(text) {
-  const match = text.match(/\d+/);
-  return match ? parseInt(match[0]) : null;
-}
-
-
-// 🧠 RECOMENDADOR
-function recommend() {
-  const budget = session.budget;
-
-  if (!budget) {
-    return `
-💸 No me dijiste presupuesto.
-
-Ejemplo:
-👉 "tengo 5000"
-
-🤖 ¿Cuánto quieres gastar?
-`;
-  }
-
-  if (budget < 4000) {
-    return `
-💡 Con $${budget} MXN:
-
-👉 Intel i3 recomendado
-✔ básico para escuela/oficina
-
-🤖 ¿Quieres subir de nivel?
-`;
-  }
-
-  if (budget < 7000) {
-    return `
-💡 Con $${budget} MXN:
-
-👉 Intel i5 recomendado
-✔ gaming
-✔ multitarea
-
-🤖 ¿Quieres comparar con i7?
-`;
-  }
-
-  return `
-💡 Con $${budget} MXN:
-
-👉 Intel i7 recomendado
-✔ máximo rendimiento
-
-🤖 ¿Quieres ver diferencias?
-`;
-}
-
-
-// ⚔️ COMPARADOR
-function compare() {
-  return `
-⚔️ COMPARACIÓN INTEL
-
-i3 → $3000  
-i5 → $5500  
-i7 → $9500  
-
-🤖 Dime tu presupuesto o uso.
-`;
-}
-
-
-// 👋 SALUDO + CIERRE
-function greetingOrFarewell(text) {
-
-  if (text.includes("hola")) {
-    return `
-👋 Hola, soy tu asistente Intel.
-
-✔ gaming
-✔ estudio
-✔ programación
-✔ presupuesto
-
-🤖 ¿Qué necesitas?
-`;
-  }
-
-  if (text.includes("adios") || text.includes("bye") || text.includes("hasta")) {
-    return `
-👋 Fue un gusto ayudarte.
-
-💻 Aquí sigo cuando necesites Intel.
-
-🤖 ¿Algo más?
-`;
-  }
-
-  return null;
-}
-
-
-// 🧠 MOTOR PRINCIPAL
 function bot(msg) {
   const text = msg.toLowerCase();
 
-  const greet = greetingOrFarewell(text);
-  if (greet) return greet;
-
   const money = extractBudget(text);
-  if (money) {
-    session.budget = money;
-    return `
-💰 Presupuesto: $${money}
 
-${recommend()}
+  // 👋 inicio / menú principal
+  if (text.includes("menu") || text.includes("inicio") || text === "hola") {
+    return {
+      reply: `
+👋 Bienvenido a Intel Store
 
-🤖 ¿Quieres comparar?
-`;
+Elige una opción:
+      `,
+      buttons: ["🎮 Gaming", "📚 Estudio", "💻 Programación", "💰 Precios", "⚔️ Comparar"]
+    };
   }
 
-  if (text.includes("gaming") || text.includes("juego")) {
+  // 🎮 gaming
+  if (text.includes("gaming")) {
     session.intent = "gaming";
-    return `
+    return {
+      reply: `
 🎮 Gaming detectado
 
-👉 i5 o i7 recomendado
-
-🤖 Dime tu presupuesto
-`;
+¿Cuál es tu presupuesto?
+      `,
+      buttons: ["3000", "5000", "8000", "10000"]
+    };
   }
 
-  if (text.includes("escuela") || text.includes("estudio")) {
+  // 📚 estudio
+  if (text.includes("estudio")) {
     session.intent = "estudio";
-    return `
-📚 Estudio detectado
+    return {
+      reply: `
+📚 Modo estudio
 
-👉 i3 o i5 recomendado
-
-🤖 ¿Cuánto tienes?
-`;
+¿Cuánto quieres invertir?
+      `,
+      buttons: ["3000", "5000", "7000"]
+    };
   }
 
-  if (text.includes("programar")) {
+  // 💻 programación
+  if (text.includes("programacion") || text.includes("programar")) {
     session.intent = "programacion";
-    return `
+    return {
+      reply: `
 💻 Programación detectada
 
-👉 i5 recomendado
-
-🤖 ¿Presupuesto?
-`;
+Elige presupuesto:
+      `,
+      buttons: ["5000", "7000", "10000"]
+    };
   }
 
-  if (text.includes("comparar") || text.includes("diferencia")) {
-    return compare();
+  // 💰 precios / info
+  if (text.includes("precio") || text.includes("precios")) {
+    return {
+      reply: `
+💰 Intel precios:
+
+i3 → $3000 (básico)
+i5 → $5500 (equilibrado)
+i7 → $9500 (potente)
+
+¿Qué quieres hacer?
+      `,
+      buttons: ["Comparar", "Recomendar", "Inicio"]
+    };
   }
 
-  return `
-🤖 No entendí eso.
+  // ⚔️ comparar
+  if (text.includes("comparar")) {
+    return {
+      reply: `
+⚔️ Comparación Intel:
 
-✔ gaming
-✔ estudio
-✔ programación
-✔ presupuesto
+i3 → básico  
+i5 → equilibrio  
+i7 → alto rendimiento  
 
-🤖 ¿Qué necesitas?
-`;
+¿Qué quieres hacer?
+      `,
+      buttons: ["Gaming", "Estudio", "Programación", "Precios"]
+    };
+  }
+
+  // 💸 presupuesto numérico
+  if (money) {
+    session.budget = money;
+
+    return {
+      reply: `
+💰 Presupuesto detectado: $${money}
+
+👉 i5 recomendado para balance
+👉 i7 si quieres potencia
+
+¿Quieres otra recomendación?
+      `,
+      buttons: ["Comparar", "Gaming", "Inicio"]
+    };
+  }
+
+  // 🔁 fallback
+  return {
+    reply: `
+🤖 Elige una opción para empezar
+    `,
+    buttons: ["🎮 Gaming", "📚 Estudio", "💻 Programación", "💰 Precios"]
+  };
 }
-
-
-// 🚀 API CHAT
-app.post("/chat", (req, res) => {
-  const msg = req.body.message || "";
-
-  console.log("USER:", msg);
-
-  const reply = bot(msg);
-
-  res.json({
-    reply,
-    buttons: ["gaming", "estudio", "programación", "comparar", "presupuesto"]
-  });
-});
-
-
-// 🚀 SERVER
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log("🔥 Intel Store Pro listo en puerto", PORT);
-});
